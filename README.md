@@ -1,4 +1,4 @@
-# Searchbale Demo
+# Searchable Demo
 
 ## Setup
 
