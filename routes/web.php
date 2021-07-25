@@ -36,13 +36,23 @@ Route::get('/posts', function (Request $request) {
 
     return $query
         ->with('author')
-        ->search($request->search)
-        ->sortByRelevance(!$request->has('sort_by'))
-        ->when($query->getModel()->isColumnValid($request->sort_by), function ($query) use ($request) {
-            $query->orderBy(
-                DB::raw($query->getModel()->getColumn($request->sort_by)),
-                $request->descending ? 'desc' : 'asc'
-            );
+        ->when($request->parse_using === 'exact', function ($query) {
+            $query->getModel()->searchQuery()->parseUsing(function ($searchStr) {
+                return "%{$searchStr}%";
+            });
         })
+        ->search($request->search)
+        ->when(
+            $request->has('sort_by') && $query->getModel()->isColumnValid($request->sort_by),
+            function ($query) use ($request) {
+                $query->orderBy(
+                    DB::raw($query->getModel()->getColumn($request->sort_by)),
+                    $request->descending ? 'desc' : 'asc'
+                );
+            },
+            function ($query) {
+                $query->sortByRelevance();
+            },
+        )
         ->paginate();
 });
